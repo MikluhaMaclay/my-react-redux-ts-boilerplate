@@ -1,2 +1,2 @@
-import App from './src'
-export default App
+import Root from './src'
+export default Root

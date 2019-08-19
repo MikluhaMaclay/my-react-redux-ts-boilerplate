@@ -1,8 +1,10 @@
+const webpack = require('webpack')
+const path = require('path')
+
 const HtmlWebPackPlugin = require('html-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const postcssPresetEnv = require('postcss-preset-env')
-const webpack = require('webpack')
-const path = require('path')
+const CopyPlugin = require('copy-webpack-plugin')
 
 const config = {
   entry: './index.js',
@@ -39,37 +41,48 @@ const config = {
         ],
       },
 
-      {
-        test: /\.module.s(a|c)ss$/,
-        use: [
-          {
-            loader: 'style-loader',
-          },
-          {
-            loader: 'postcss-loader',
-            options: {
-              ident: 'postcss',
-              plugins: () => [postcssPresetEnv()],
-            },
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              modules: true,
-              localIdentName: '[name]__[local]___[hash:base64:5]',
-              camelCase: true,
-            },
-          },
-          {
-            loader: 'sass-loader',
-          },
-        ],
-      },
+      // {
+      //   test: /\.module.s(a|c)ss$/,
+      //   use: [
+      //     {
+      //       loader: 'style-loader',
+      //     },
+      //     {
+      //       loader: 'postcss-loader',
+      //       options: {
+      //         ident: 'postcss',
+      //         plugins: () => [postcssPresetEnv()],
+      //       },
+      //     },
+      //     {
+      //       loader: 'css-loader',
+      //       options: {
+      //         modules: true,
+      //         localIdentName: '[name]__[local]___[hash:base64:5]',
+      //         camelCase: true,
+      //       },
+      //     },
+      //     {
+      //       loader: 'sass-loader',
+      //     },
+      //   ],
+      // },
+
+      // {
+      //   test: /(\.scss|\.css)$/,
+      //   use: [
+      //     { loader: 'style-loader' },
+      //     { loader: 'css-loader' },
+      //     { loader: 'postcss-loader' },
+      //     { loader: 'sass-loader' }
+      //   ]
+      // },
 
       {
-        test: /\.s(a|c)ss$/,
+        test: /(\.scss|\.css)$/,
         use: [
           'style-loader',
+          'css-loader',
           {
             loader: 'postcss-loader',
             options: {
@@ -77,7 +90,6 @@ const config = {
               plugins: () => [postcssPresetEnv()],
             },
           },
-          'css-loader',
           'sass-loader',
         ],
       },
@@ -112,28 +124,41 @@ const config = {
       },
     ],
   },
+
   resolve: {
-    extensions: ['.js', '.ts', '.tsx', '.scss'],
+    extensions: ['.js', '.ts', '.tsx', '.scss', '.sass'],
     alias: {
       Utils: path.resolve(__dirname, 'src/utils'),
       Components: path.resolve(__dirname, 'src/components'),
       Assets: path.resolve(__dirname, 'src/assets')
     }
   },
+
+  devServer: {
+    contentBase: path.join(__dirname, 'build'),
+    compress: true,
+    port: 8080
+  }
 }
 
 module.exports = (env, argv) => {
   config.plugins = [
     new HtmlWebPackPlugin({
-      template: './src/index.html',
+      template: './public/index.html',
       filename: './index.html',
       title: 'Boilterplate',
       inject: 'body',
     }),
+
     new webpack.DefinePlugin({
       __DEVELOPMENT__: argv.mode === 'development',
       __VERSION__: '1.0',
     }),
+
+    new CopyPlugin([
+      { from: './public/manifest.json', to: './build'},
+      { from: './public/favicon.ico', to: './build'}
+    ])
   ]
 
   if (argv.mode === 'development') {
