@@ -5,12 +5,19 @@ const HtmlWebPackPlugin = require('html-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const postcssPresetEnv = require('postcss-preset-env')
 const CopyPlugin = require('copy-webpack-plugin')
+const CircularDependencyPlugin = require('circular-dependency-plugin')
 
 const config = {
   entry: './index.js',
 
+  output: {
+    path: path.resolve(__dirname, 'build')
+  },
+
   optimization: {
-    minimizer: [new TerserPlugin()],
+    minimizer: [
+      new TerserPlugin()
+    ],
   },
   module: {
     rules: [
@@ -68,16 +75,6 @@ const config = {
       //   ],
       // },
 
-      // {
-      //   test: /(\.scss|\.css)$/,
-      //   use: [
-      //     { loader: 'style-loader' },
-      //     { loader: 'css-loader' },
-      //     { loader: 'postcss-loader' },
-      //     { loader: 'sass-loader' }
-      //   ]
-      // },
-
       {
         test: /(\.scss|\.css)$/,
         use: [
@@ -130,7 +127,8 @@ const config = {
     alias: {
       Utils: path.resolve(__dirname, 'src/utils'),
       Components: path.resolve(__dirname, 'src/components'),
-      Assets: path.resolve(__dirname, 'src/assets')
+      Assets: path.resolve(__dirname, 'src/assets'),
+      'react-dom': '@hot-loader/react-dom'
     }
   },
 
@@ -138,7 +136,14 @@ const config = {
     contentBase: path.join(__dirname, 'build'),
     compress: true,
     port: 8080
+  },
+
+  performance: {
+    // hints: false,
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000
   }
+
 }
 
 module.exports = (env, argv) => {
@@ -156,17 +161,57 @@ module.exports = (env, argv) => {
     }),
 
     new CopyPlugin([
-      { from: './public/manifest.json', to: './build'},
-      { from: './public/favicon.ico', to: './build'}
+      { from: './public/manifest.json', to: './'},
+      { from: './public/favicon.ico', to: './'}
     ])
   ]
 
+  // DEV
   if (argv.mode === 'development') {
-    config.plugins.concat([new webpack.HotModuleReplacementPlugin()])
-  }
+    config.plugins.concat([
+      new webpack.HotModuleReplacementPlugin(),
+      new CircularDependencyPlugin({
+        exclude: /a\.js|node_modules/,
+        failOnError: false
+      })
+    ])
 
+    config.output = {
+      ...config.output,
+      filename: '[name].js',
+      chunkFilename: '[name].chunk.js'
+    }
+
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all'
+      }
+    }
+
+  }
+  // PROD
   if (argv.mode === 'production') {
     config.plugins.concat([new webpack.optimize.AggressiveMergingPlugin()])
+
+    config.output = {
+      ...config.output,
+      filename: '[name].[chunkhash].js',
+      chunkFilename: '[name].[chunkhash].chunk.js'
+    }
+    
+    config.optimization = {
+      ...config.optimization,
+      sideEffects: true,
+      concatenateModules: true,
+      nodeEnv: 'production',
+      runtimeChunk: 'single',
+      splitChunks: {
+        chunks: 'all',
+        maxInitialRequests: 10,
+        minSize: 0
+      }
+    }
   }
 
   return config
