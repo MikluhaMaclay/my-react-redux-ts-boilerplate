@@ -1,11 +1,11 @@
 import { createStore, applyMiddleware, compose } from 'redux';
 import { routerMiddleware } from 'connected-react-router';
 import createSagaMiddleware from 'redux-saga';
-import createReducer from '../redux/reducers';
+import { createReducer, rootSaga } from 'Redux/root';
 
 export default function configureStore(initialState = {}, history) {
   let composeEnhancers = compose;
-  const reduxSagaMonitorOptions = {}
+  const reduxSagaMonitorOptions = {};
 
   if (process.env.NODE_ENV !== 'production' && typeof window === 'object') {
     /* eslint-disable no-underscore-dangle */
@@ -26,23 +26,19 @@ export default function configureStore(initialState = {}, history) {
   const middlewares = [sagaMiddleware, routerMiddleware(history)];
 
   const enhancers = [applyMiddleware(...middlewares)];
+  const store = createStore(createReducer(), initialState, composeEnhancers(...enhancers));
 
-  const store = createStore(
-    createReducer(),
-    initialState,
-    composeEnhancers(...enhancers),
-  );
-
+  sagaMiddleware.run(rootSaga);
   store.runSaga = sagaMiddleware.run;
   store.injectedReducers = {}; // Reducer registry
   store.injectedSagas = {}; // Saga registry
 
   // Make reducers hot reloadable, see http://mxs.is/googmo
-  if (module.hot) {
-    module.hot.accept('../redux/reducers', () => {
-      store.replaceReducer(createReducer(store.injectedReducers));
-    });
-  }
+  // if (module.hot) {
+  //   module.hot.accept('../redux/reducers', () => {
+  //     store.replaceReducer(createReducer(store.injectedReducers));
+  //   });
+  // }
 
   return store;
 }

@@ -1,23 +1,21 @@
-const webpack = require('webpack')
-const path = require('path')
+const webpack = require('webpack');
+const path = require('path');
 
-const HtmlWebPackPlugin = require('html-webpack-plugin')
-const TerserPlugin = require('terser-webpack-plugin')
-const postcssPresetEnv = require('postcss-preset-env')
-const CopyPlugin = require('copy-webpack-plugin')
-const CircularDependencyPlugin = require('circular-dependency-plugin')
+const HtmlWebPackPlugin = require('html-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+const postcssPresetEnv = require('postcss-preset-env');
+const CopyPlugin = require('copy-webpack-plugin');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const config = {
   entry: './index.js',
 
   output: {
-    path: path.resolve(__dirname, 'build')
+    path: path.resolve(__dirname, 'build'),
   },
 
   optimization: {
-    minimizer: [
-      new TerserPlugin()
-    ],
+    minimizer: [new TerserPlugin()],
   },
   module: {
     rules: [
@@ -128,23 +126,24 @@ const config = {
       Utils: path.resolve(__dirname, 'src/utils'),
       Components: path.resolve(__dirname, 'src/components'),
       Assets: path.resolve(__dirname, 'src/assets'),
-      'react-dom': '@hot-loader/react-dom'
-    }
+      'react-dom': '@hot-loader/react-dom',
+      Redux: path.resolve(__dirname, 'src/redux'),
+      Containers: path.resolve(__dirname, 'src/containers'),
+    },
   },
 
   devServer: {
     contentBase: path.join(__dirname, 'build'),
     compress: true,
-    port: 8080
+    port: 8080,
   },
 
   performance: {
     // hints: false,
     maxEntrypointSize: 512000,
-    maxAssetSize: 512000
-  }
-
-}
+    maxAssetSize: 512000,
+  },
+};
 
 module.exports = (env, argv) => {
   config.plugins = [
@@ -161,10 +160,10 @@ module.exports = (env, argv) => {
     }),
 
     new CopyPlugin([
-      { from: './public/manifest.json', to: './'},
-      { from: './public/favicon.ico', to: './'}
-    ])
-  ]
+      { from: './public/manifest.json', to: './' },
+      { from: './public/favicon.ico', to: './' },
+    ]),
+  ];
 
   // DEV
   if (argv.mode === 'development') {
@@ -172,34 +171,33 @@ module.exports = (env, argv) => {
       new webpack.HotModuleReplacementPlugin(),
       new CircularDependencyPlugin({
         exclude: /a\.js|node_modules/,
-        failOnError: false
-      })
-    ])
+        failOnError: false,
+      }),
+    ]);
 
     config.output = {
       ...config.output,
       filename: '[name].js',
-      chunkFilename: '[name].chunk.js'
-    }
+      chunkFilename: '[name].chunk.js',
+    };
 
     config.optimization = {
       ...config.optimization,
       splitChunks: {
-        chunks: 'all'
-      }
-    }
-
+        chunks: 'all',
+      },
+    };
   }
   // PROD
   if (argv.mode === 'production') {
-    config.plugins.concat([new webpack.optimize.AggressiveMergingPlugin()])
+    config.plugins.concat([new webpack.optimize.AggressiveMergingPlugin()]);
 
     config.output = {
       ...config.output,
       filename: '[name].[chunkhash].js',
-      chunkFilename: '[name].[chunkhash].chunk.js'
-    }
-    
+      chunkFilename: '[name].[chunkhash].chunk.js',
+    };
+
     config.optimization = {
       ...config.optimization,
       sideEffects: true,
@@ -209,10 +207,10 @@ module.exports = (env, argv) => {
       splitChunks: {
         chunks: 'all',
         maxInitialRequests: 10,
-        minSize: 0
-      }
-    }
+        minSize: 0,
+      },
+    };
   }
 
-  return config
-}
+  return config;
+};
